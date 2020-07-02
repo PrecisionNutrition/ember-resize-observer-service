@@ -8,6 +8,10 @@ import { delay, setSize } from '../../utils';
 module('Integration | Modifier | on-resize', function (hooks) {
   setupRenderingTest(hooks);
 
+  hooks.beforeEach(function () {
+    sinon.stub(window, 'requestAnimationFrame').callsFake(callback => callback());
+  });
+
   test('it works', async function (assert) {
     this.onResize = sinon.spy().named('onResize');
 
@@ -29,7 +33,9 @@ module('Integration | Modifier | on-resize', function (hooks) {
       .calledOnce('called onResize on insert')
       .calledWithExactly([sinon.match.instanceOf(ResizeObserverEntry)])
       .calledWithExactly([sinon.match({ target: element })])
-      .calledWithExactly([sinon.match({ contentRect: sinon.match({ height: 100, width: 100 }) })]);
+      .calledWithExactly([
+        sinon.match({ contentRect: sinon.match({ height: 100, width: 100 }) }),
+      ]);
 
     this.onResize.resetHistory();
     await setSize(element, { width: 50 });
@@ -38,7 +44,9 @@ module('Integration | Modifier | on-resize', function (hooks) {
       .spy(this.onResize)
       .calledOnce('called onResize on width change')
       .calledWithExactly([sinon.match({ target: element })])
-      .calledWithExactly([sinon.match({ contentRect: sinon.match({ height: 100, width: 50 }) })]);
+      .calledWithExactly([
+        sinon.match({ contentRect: sinon.match({ height: 100, width: 50 }) }),
+      ]);
 
     this.onResize.resetHistory();
     await setSize(element, { height: 50 });
@@ -47,7 +55,9 @@ module('Integration | Modifier | on-resize', function (hooks) {
       .spy(this.onResize)
       .calledOnce('called onResize on height change')
       .calledWithExactly([sinon.match({ target: element })])
-      .calledWithExactly([sinon.match({ contentRect: sinon.match({ height: 50, width: 50 }) })]);
+      .calledWithExactly([
+        sinon.match({ contentRect: sinon.match({ height: 50, width: 50 }) }),
+      ]);
 
     this.onResize.resetHistory();
     await setSize(element, { width: 50 });
@@ -130,5 +140,19 @@ module('Integration | Modifier | on-resize', function (hooks) {
 
     assert.spy(callback1).notCalled();
     assert.spy(callback2).calledOnce();
+  });
+
+  test('prevents ResizeObserver loop limit related errors', async function (assert) {
+    assert.expect(0);
+    window.requestAnimationFrame.restore();
+    this.onResize = () => this.set('showText', true);
+
+    await render(hbs`
+      <div {{on-resize this.onResize}}>
+        {{if this.showText "Trigger ResizeObserver again"}}
+      </div>
+    `);
+
+    delay();
   });
 });
