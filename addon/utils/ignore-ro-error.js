@@ -1,5 +1,3 @@
-const errorMessage = 'ResizeObserver loop limit exceeded';
-
 /**
  * Ignores "ResizeObserver loop limit exceeded" error in Ember tests.
  *
@@ -18,7 +16,11 @@ export default function ignoreROError() {
   const onError = window.onerror;
 
   window.onerror = (message, ...args) => {
-    if (message === errorMessage) {
+    if (
+      message === 'ResizeObserver loop limit exceeded' ||
+      message ===
+        'ResizeObserver loop completed with undelivered notifications.'
+    ) {
       return true;
     } else {
       onError(message, ...args);
